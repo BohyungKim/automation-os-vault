@@ -1,0 +1,36 @@
+name: Refresh Iceland dashboard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "iceland-live-dashboard/update_dashboard.py"
+      - ".github/workflows/iceland-dashboard.yml"
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Generate latest weather, cloud, and aurora dashboard
+        run: python iceland-live-dashboard/update_dashboard.py
+
+      - name: Commit refreshed dashboard
+        run: |
+          if git diff --quiet -- iceland-live-dashboard/index.html; then
+            echo "No dashboard changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add iceland-live-dashboard/index.html
+          git commit -m "Refresh Iceland weather dashboard"
+          git push
